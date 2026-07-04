@@ -1,0 +1,20 @@
+# Logs
+*.log
+backend/logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Resume junk
+resume_img-*
+resume_page_*
+resume_temp.*
+copymind_screenshot.png
+
+# Env
+.env
