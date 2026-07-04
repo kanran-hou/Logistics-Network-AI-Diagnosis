@@ -1,4 +1,4 @@
-import json, os, re, math
+import json, os, re, math, math
 from pathlib import Path
 import httpx
 from fastapi import FastAPI, Query
@@ -58,8 +58,6 @@ async def analyze_city(city: str = Query(...)):
     return {"city_data": city_data, "ai_report": ai_report}
 
 async def call_ai(city_data: dict) -> dict:
-    if not AI_API_KEY:
-        return {"error": "no api key"}
     city = city_data["city"]
     e = city_data.get("std_ellipse", {})
     k = city_data.get("kde", {})
