@@ -135,7 +135,38 @@ async def call_ai(city_data: dict) -> dict:
             ai_part = json.loads(match.group()) if match else {"summary": "", "problems": [], "suggestions": [], "site_recommendations": []}
     except Exception as e:
         logger.error("AI failed: " + str(e))
-        ai_part = {"summary": "", "problems": ["AI分析暂不可用"], "suggestions": [], "site_recommendations": []}
+        # Generate data-driven content
+    bs_local = city_data.get("blind_spots", [])
+    fb_problems = []
+    fb_suggestions = []
+    fb_sites = []
+
+    for b in bs_local:
+        fb_problems.append(b["district"] + "\u7f51\u70b9\u5bc6\u5ea6\u504f\u4f4e\uff0c\u4ec5" + str(round(b.get("density", 0), 4)) + "\u4e2a/km2")
+    if balance_score < 60:
+        fb_problems.append("\u5404\u533a\u53bf\u7f51\u70b9\u5206\u5e03\u4e0d\u5747\u8861\uff0c\u9ad8\u5bc6\u5ea6\u533a\u4e0e\u4f4e\u5bc6\u5ea6\u533a\u5dee\u5f02\u8f83\u5927")
+    if traffic_match_score < 50:
+        fb_problems.append("\u4ea4\u901a\u4f18\u52bf\u5ea6\u504f\u4f4e\uff0c\u7269\u6d41\u914d\u9001\u6548\u7387\u53d7\u9650")
+    if layout_score < 60:
+        fb_problems.append("\u7f51\u70b9\u7a7a\u95f4\u5206\u5e03\u8fc7\u4e8e\u5206\u6563\uff0c\u8986\u76d6\u6548\u7387\u6709\u5f85\u63d0\u5347")
+    if not fb_problems:
+        fb_problems.append("\u6574\u4f53\u5e03\u5c40\u5408\u7406\uff0c\u65e0\u663e\u8457\u95ee\u9898")
+
+    for b in bs_local[:2]:
+        fb_suggestions.append("\u5efa\u8bae\u5728" + b["district"] + "\u589e\u8bbe\u7f51\u70b9\uff0c\u63d0\u5347\u533a\u57df\u8986\u76d6\u7387")
+    if traffic_match_score < 60:
+        fb_suggestions.append("\u4f18\u5316\u7269\u6d41\u8def\u7ebf\u89c4\u5212\uff0c\u63d0\u5347\u4ea4\u901a\u5339\u914d\u6548\u7387")
+    if balance_score < 60 and len(city_data.get("districts", [])) > 3:
+        fb_suggestions.append("\u5728\u4e2d\u5bc6\u5ea6\u533a\u57df\u589e\u8bbe\u7f51\u70b9\uff0c\u5747\u8861\u5404\u533a\u53bf\u8986\u76d6\u6c34\u5e73")
+    if not fb_suggestions:
+        fb_suggestions.append("\u6574\u4f53\u5e03\u5c40\u5408\u7406\uff0c\u5efa\u8bae\u4fdd\u6301\u73b0\u6709\u7f51\u7edc\u5e76\u6301\u7eed\u4f18\u5316")
+
+    all_dd = sorted(dd, key=lambda x: x.get("density", 0)) if dd else []
+    for low_d in all_dd[:3]:
+        if low_d.get("count", 0) < city_data.get("total_points", 1) * 0.1:
+            fb_sites.append({"location": low_d["name"] + "\u4e2d\u5fc3\u533a\u57df", "reason": "\u5f53\u524d\u7f51\u70b9\u5bc6\u5ea6\u4f4e\uff0c\u589e\u8bbe\u53ef\u63d0\u5347\u533a\u57df\u8986\u76d6\u7387"})
+    if not fb_sites:
+        fb_sites.append({"location": city + "\u4ea4\u901a\u67a2\u7ebd\u5468\u8fb9", "reason": "\u4ea4\u901a\u4fbf\u5229\uff0c\u53ef\u8f90\u5c04\u5468\u8fb9\u533a\u57df"})
 
     return {
         "layout_score": layout_score,
@@ -143,10 +174,10 @@ async def call_ai(city_data: dict) -> dict:
         "balance_score": balance_score,
         "overall_score": overall_score,
         "overall_grade": overall_grade,
-        "summary": ai_part.get("summary", ""),
-        "problems": ai_part.get("problems", []),
-        "suggestions": ai_part.get("suggestions", []),
-        "site_recommendations": ai_part.get("site_recommendations", [])
+        "summary": "",
+        "problems": fb_problems[:3],
+        "suggestions": fb_suggestions[:3],
+        "site_recommendations": fb_sites[:3]
     }
 
 
